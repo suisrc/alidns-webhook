@@ -1,4 +1,4 @@
-IMAGE_NAME := pragkent/alidns-webhook
+IMAGE_NAME := suisrc/alidns-webhook
 IMAGE_TAG := $(shell cat VERSION)
 
 test:

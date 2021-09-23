@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/jetstack/cert-manager/pkg/acme/webhook/cmd"
-	"github.com/pragkent/alidns-webhook/alidns"
+	"github.com/suisrc/alidns-webhook/alidns"
 	"k8s.io/klog"
 )
 

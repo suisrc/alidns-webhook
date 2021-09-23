@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jetstack/cert-manager/test/acme/dns"
-	"github.com/pragkent/alidns-webhook/alidns"
+	"github.com/suisrc/alidns-webhook/alidns"
 )
 
 var (
@@ -21,7 +21,7 @@ func TestRunsSuite(t *testing.T) {
 		dns.SetResolvedZone(zone),
 		dns.SetAllowAmbientCredentials(false),
 		dns.SetManifestPath("testdata/alidns-solver"),
-		dns.SetBinariesPath("kubebuilder/bin"),
+		// dns.SetBinariesPath("kubebuilder/bin"),
 	)
 
 	fixture.RunConformance(t)
