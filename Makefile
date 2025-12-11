@@ -22,3 +22,6 @@ proxy:
 helm:
 	helm -n cert-manager template deploy/webhook > deploy/bundle.yml
 
+test:
+	GROUP_NAME=suisrc go run main.go
+

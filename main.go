@@ -5,6 +5,9 @@ import (
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	"github.com/suisrc/webhook-dns/multi"
+
+	// This will register the provider with the webhook serving library.
+	_ "github.com/suisrc/webhook-dns/provider"
 )
 
 var GroupName = os.Getenv("GROUP_NAME")
