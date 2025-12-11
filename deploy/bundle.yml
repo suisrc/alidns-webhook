@@ -1,0 +1,273 @@
+---
+# Source: webhook-suisrc/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: webhook-suisrc
+  namespace: "cert-manager"
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+---
+# Source: webhook-suisrc/templates/rbac.yaml
+# Grant cert-manager permission to validate using our apiserver
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: webhook-suisrc:domain-solver
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+rules:
+  - apiGroups:
+      - acme.suisrc.com
+    resources:
+      - '*'
+    verbs:
+      - 'create'
+---
+# Source: webhook-suisrc/templates/rbac.yaml
+# apiserver gets the auth-delegator role to delegate auth decisions to
+# the core apiserver
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: webhook-suisrc:auth-delegator
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: webhook-suisrc
+    namespace: cert-manager
+---
+# Source: webhook-suisrc/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: webhook-suisrc:domain-solver
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: webhook-suisrc:domain-solver
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: cert-manager
+    namespace: cert-manager
+---
+# Source: webhook-suisrc/templates/rbac.yaml
+# Grant the webhook permission to read the ConfigMap containing the Kubernetes
+# apiserver's requestheader-ca-certificate.
+# This ConfigMap is automatically created by the Kubernetes apiserver.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: webhook-suisrc:webhook-authentication-reader
+  namespace: kube-system
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: webhook-suisrc
+    namespace: cert-manager
+---
+# Source: webhook-suisrc/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-suisrc
+  namespace: "cert-manager"
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    app: webhook-suisrc
+    release: release-name
+---
+# Source: webhook-suisrc/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-suisrc
+  namespace: "cert-manager"
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+spec:
+  replicas: 
+  selector:
+    matchLabels:
+      app: webhook-suisrc
+      release: release-name
+  template:
+    metadata:
+      labels:
+        app: webhook-suisrc
+        release: release-name
+    spec:
+      serviceAccountName: webhook-suisrc
+      containers:
+        - name: webhook-suisrc
+          image: "suisrc/alidns-webhook:latest"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --tls-cert-file=/tls/tls.crt
+            - --tls-private-key-file=/tls/tls.key
+          env:
+            - name: GROUP_NAME
+              value: "acme.suisrc.com"
+          ports:
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: https
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: https
+          volumeMounts:
+            - name: certs
+              mountPath: /tls
+              readOnly: true
+          resources:
+            {}
+      volumes:
+        - name: certs
+          secret:
+            secretName: webhook-suisrc-webhook-tls
+---
+# Source: webhook-suisrc/templates/apiservice.yaml
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1alpha1.acme.suisrc.com
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+  annotations:
+    cert-manager.io/inject-ca-from: "cert-manager/webhook-suisrc-webhook-tls"
+spec:
+  group: acme.suisrc.com
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: webhook-suisrc
+    namespace: cert-manager
+  version: v1alpha1
+---
+# Source: webhook-suisrc/templates/pki.yaml
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: webhook-suisrc-ca
+  namespace: "cert-manager"
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+spec:
+  secretName: webhook-suisrc-ca
+  duration: 43800h # 5y
+  issuerRef:
+    name: webhook-suisrc-selfsign
+  commonName: "ca.example-webhook.cert-manager"
+  isCA: true
+---
+# Source: webhook-suisrc/templates/pki.yaml
+# Finally, generate a serving certificate for the webhook to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: webhook-suisrc-webhook-tls
+  namespace: "cert-manager"
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+spec:
+  secretName: webhook-suisrc-webhook-tls
+  duration: 8760h # 1y
+  issuerRef:
+    name: webhook-suisrc-ca
+  dnsNames:
+  - webhook-suisrc
+  - webhook-suisrc.cert-manager
+  - webhook-suisrc.cert-manager.svc
+---
+# Source: webhook-suisrc/templates/pki.yaml
+# Create a selfsigned Issuer, in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: webhook-suisrc-selfsign
+  namespace: "cert-manager"
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+spec:
+  selfSigned: {}
+---
+# Source: webhook-suisrc/templates/pki.yaml
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: webhook-suisrc-ca
+  namespace: "cert-manager"
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+spec:
+  ca:
+    secretName: webhook-suisrc-ca
