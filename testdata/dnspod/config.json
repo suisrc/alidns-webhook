@@ -1,12 +1,12 @@
 {
-  "provider": "alidns",
+  "provider": "dnspod",
   "region": "",
   "accessRef": {
-    "name": "alidns-secret-xxx",
+    "name": "dnspod-secret-xxx",
     "key": "access"
   },
   "secretRef": {
-    "name": "alidns-secret-xxx",
+    "name": "dnspod-secret-xxx",
     "key": "secret"
   }
 }

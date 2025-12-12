@@ -3,6 +3,7 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -23,8 +24,8 @@ type DnspodClient struct {
 }
 
 type DnspodConfig struct {
-	TTL        *uint64                  `json:"ttl"`
-	RecordLine string                   `json:"recordLine"`
+	TTL        *uint64                  `json:"ttl,omitempty"`
+	RecordLine string                   `json:"recordLine,omitempty"`
 	AccessRef  cmmeta.SecretKeySelector `json:"accessRef"`
 	SecretRef  cmmeta.SecretKeySelector `json:"secretRef"`
 }
@@ -33,6 +34,12 @@ func NewDnspod(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.C
 	cfg := DnspodConfig{}
 	if err := json.Unmarshal(ch.Config.Raw, &cfg); err != nil {
 		return nil, fmt.Errorf("error decoding solver config: %v", err)
+	}
+	if cfg.RecordLine == "" {
+		cfg.RecordLine = "默认"
+	}
+	if cfg.TTL == nil {
+		cfg.TTL = common.Uint64Ptr(600)
 	}
 	klog.Infof("Decoded config: %v", cfg)
 	access, err := multi.GetSecretData(cl, cfg.AccessRef, ch.ResourceNamespace)
@@ -51,13 +58,6 @@ func NewDnspod(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.C
 	if err != nil {
 		klog.Errorf("error creating dnspod client: %v", err)
 		return nil, err
-	}
-	if cfg.RecordLine == "" {
-		cfg.RecordLine = "default"
-	}
-	if cfg.TTL == nil {
-		ttl := uint64(600)
-		cfg.TTL = &ttl
 	}
 	return &DnspodClient{dnsc: client, conf: cfg}, nil
 }
@@ -92,11 +92,16 @@ func (aa *DnspodClient) AddRecord(zone, rr, val, typ string) error {
 
 func (aa *DnspodClient) GetRecord(zone, rr, typ string) (any, string, error) {
 	req := dnspod.NewDescribeRecordListRequest()
+	req.Limit = common.Uint64Ptr(1)
 	req.Domain = common.StringPtr(zone)
+	// req.Keyword = common.StringPtr(rr)
 	req.Subdomain = common.StringPtr(rr)
 	req.RecordType = common.StringPtr(typ)
 	resp, err := aa.dnsc.DescribeRecordList(req)
 	if err != nil {
+		if strings.Contains(err.Error(), "ResourceNotFound.NoDataOfRecord") {
+			return "", "", ErrNoRecord // record does not exist
+		}
 		return "", "", err
 	}
 	var record *dnspod.RecordListItem = nil
@@ -107,7 +112,7 @@ func (aa *DnspodClient) GetRecord(zone, rr, typ string) (any, string, error) {
 		}
 	}
 	if record == nil {
-		return "", "", fmt.Errorf("txt record does not exist: %v.%v", rr, zone)
+		return "", "", ErrNoRecord
 	}
 	return record.RecordId, *record.Value, nil
 }

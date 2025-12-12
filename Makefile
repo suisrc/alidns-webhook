@@ -25,13 +25,18 @@ helm:
 main:
 	GROUP_NAME=suisrc go run main.go
 
-# make test 
-test-custom:
+test-custom2:
 	TEST_ASSET_ETCD=_test/kubebuilder/bin/etcd \
 	TEST_ASSET_KUBE_APISERVER=_test/kubebuilder/bin/kube-apiserver \
 	TEST_ASSET_KUBECTL=_test/kubebuilder/bin/kubectl \
 	go test -v -run TestCustom testdata/custom_test.go
 
-test:
-	go test -v -run TestCustom testdata/custom_test.go
+test-custom:
+	go test -v testdata/custom_test.go
+
+test-alidns:
+	go test -v testdata/alidns_test.go
+
+test-dnspod:
+	go test -v testdata/dnspod_test.go
 

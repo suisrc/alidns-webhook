@@ -22,7 +22,7 @@ type AlidnsClient struct {
 }
 
 type AlidnsConfig struct {
-	Region    string                   `json:"region"`
+	Region    string                   `json:"region,omitempty"`
 	AccessRef cmmeta.SecretKeySelector `json:"accessRef"`
 	SecretRef cmmeta.SecretKeySelector `json:"secretRef"`
 }
@@ -102,7 +102,7 @@ func (aa *AlidnsClient) GetRecord(zone, rr, typ string) (any, string, error) {
 	}
 
 	if record == nil {
-		return "", "", fmt.Errorf("txt record does not exist: %v.%v", rr, zone)
+		return "", "", ErrNoRecord
 	}
 	return record.RecordId, record.Value, nil
 }

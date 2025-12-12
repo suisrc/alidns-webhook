@@ -16,6 +16,7 @@ cert-manager-webhook-example
 
 # Make artifacts
 _out
-_test
+_test/
+.tmp/
 
-.tmp
+*-xxx.yaml

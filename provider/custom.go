@@ -27,7 +27,14 @@ type CustomConfig struct {
 	secret string `json:"-"`
 }
 
+var (
+	_custom_records map[string]string = nil
+)
+
 func NewCustom(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.Client, error) {
+	if _custom_records == nil {
+		_custom_records = make(map[string]string)
+	}
 	cfg := CustomConfig{}
 	if err := json.Unmarshal(ch.Config.Raw, &cfg); err != nil {
 		return nil, fmt.Errorf("error decoding solver config: %v", err)
@@ -54,21 +61,22 @@ func (aa *CustomClient) GetHosted(zone string) (string, error) {
 
 func (aa *CustomClient) AddRecord(zone, rr, val, typ string) error {
 	klog.Infof("[%v-%v]AddRecord: %v.%v %v %v", aa.conf.access, aa.conf.secret, rr, zone, val, typ)
+	_custom_records[fmt.Sprintf("%v.%v", rr, zone)] = val
 	return nil
 }
 
 func (aa *CustomClient) GetRecord(zone, rr, typ string) (any, string, error) {
 	klog.Infof("[%v-%v]GetRecord: %v.%v %v", aa.conf.access, aa.conf.secret, rr, zone, typ)
 	id := fmt.Sprintf("%v.%v", rr, zone)
-	return id, "123d==", nil
+	val, ok := _custom_records[id]
+	if !ok {
+		return "", "", ErrNoRecord
+	}
+	return id, val, nil
 }
 
 func (aa *CustomClient) DelRecord(zone string, id any) error {
 	klog.Infof("[%v-%v]DelRecord: %v", aa.conf.access, aa.conf.secret, id)
+	delete(_custom_records, id.(string))
 	return nil
 }
-
-// func init() {
-// 	multi.ClientBuilders["huawei"] = CustomClient
-// 	klog.Info("Registered huawei provider, suisrc/webhook-dns")
-// }

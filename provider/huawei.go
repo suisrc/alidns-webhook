@@ -22,7 +22,7 @@ type HuaweiClient struct {
 }
 
 type HuaweiConfig struct {
-	Region    string                   `json:"region"`
+	Region    string                   `json:"region,omitempty"`
 	AccessRef cmmeta.SecretKeySelector `json:"accessRef"`
 	SecretRef cmmeta.SecretKeySelector `json:"secretRef"`
 }
@@ -114,7 +114,7 @@ func (aa *HuaweiClient) GetRecord(zone, rr, typ string) (any, string, error) {
 	}
 
 	if record == nil {
-		return "", "", fmt.Errorf("txt record does not exist: %v.%v", rr, zone)
+		return "", "", ErrNoRecord
 	}
 	return *record.Id, (*record.Records)[0], nil
 }
@@ -126,8 +126,3 @@ func (aa *HuaweiClient) DelRecord(zone string, id any) error {
 	_, err := aa.dnsc.DeleteRecordSet(&req)
 	return err
 }
-
-// func init() {
-// 	multi.ClientBuilders["huawei"] = HuaweiClient
-// 	klog.Info("Registered huawei provider, suisrc/webhook-dns")
-// }
