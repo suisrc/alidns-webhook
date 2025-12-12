@@ -10,6 +10,8 @@
 - dnspod: 腾讯
 - huawei: 华为(暂未测试)
 
+之前版本是基于[alidns-webhook](https://github.com/pragkent/alidns-webhook)开发（master版本依然保留），20251212后的版本已经完全重构， 已便于支持多个云服务平台的扩展。暂时仅支持 alidns和dnspod, 不过已经抽象了DnsClient 接口，便于扩展。
+
 ## 部署
 
 ```sh
@@ -280,5 +282,6 @@ cp -r _test/kubebuilder/bin/* ~/go/pkg/mod/github.com/cert-manager/cert-manager@
 
 ## 感谢
 
-[webhook-example](https://github.com/cert-manager/webhook-example)
-[cert-manager-webhook-dnspod](https://github.com/imroc/cert-manager-webhook-dnspod)
+[webhook-example](https://github.com/cert-manager/webhook-example)  
+[alidns-webhook](https://github.com/pragkent/alidns-webhook)  
+[cert-manager-webhook-dnspod](https://github.com/imroc/cert-manager-webhook-dnspod)  
