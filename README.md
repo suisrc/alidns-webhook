@@ -40,8 +40,8 @@ spec:
         webhook:
           solverName: suisrc
           groupName: acme.suisrc.com
-          provider: alidns
           config:
+            provider: alidns
             region: ""
             accessRef:
               name: as-alidns
@@ -84,8 +84,8 @@ spec:
         webhook:
           solverName: suisrc
           groupName: acme.suisrc.com
-          provider: alidns
           config:
+            provider: dnspod
             ttl: 600
             recordLine: ""
             accessRef:
@@ -130,8 +130,8 @@ spec:
         webhook:
           solverName: suisrc
           groupName: acme.suisrc.com
-          provider: huawei
           config:
+            provider: huawei
             region: "cn-north-4"
             accessRef:
               name: as-huawei

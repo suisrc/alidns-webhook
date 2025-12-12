@@ -10,8 +10,8 @@ metadata:
     chart: webhook-suisrc-1.0.0
     release: release-name
     heritage: Helm
-# Source: webhook-suisrc/templates/rbac.yaml
 ---
+# Source: webhook-suisrc/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -29,25 +29,6 @@ rules:
     verbs:
     - get
     - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: webhook-suisrc:secret-reader
-  labels:
-    app: webhook-suisrc
-    chart: webhook-suisrc-1.0.0
-    release: release-name
-    heritage: Helm
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: webhook-suisrc:secret-reader
-subjects:
-  - apiGroup: ""
-    kind: ServiceAccount
-    name: webhook-suisrc
-    namespace: cert-manager
 ---
 # Source: webhook-suisrc/templates/rbac.yaml
 # Grant cert-manager permission to validate using our apiserver
@@ -67,6 +48,26 @@ rules:
       - '*'
     verbs:
       - 'create'
+---
+# Source: webhook-suisrc/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: webhook-suisrc:secret-reader
+  labels:
+    app: webhook-suisrc
+    chart: webhook-suisrc-1.0.0
+    release: release-name
+    heritage: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: webhook-suisrc:secret-reader
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: webhook-suisrc
+    namespace: cert-manager
 ---
 # Source: webhook-suisrc/templates/rbac.yaml
 # apiserver gets the auth-delegator role to delegate auth decisions to
@@ -253,7 +254,7 @@ spec:
   duration: 43800h # 5y
   issuerRef:
     name: webhook-suisrc-selfsign
-  commonName: "ca.example-webhook.cert-manager"
+  commonName: "ca.webhook-dns.cert-manager"
   isCA: true
 ---
 # Source: webhook-suisrc/templates/pki.yaml
