@@ -4,10 +4,18 @@
 
 # ACME webhook
 
-多 webhook 实现， 目前支持：  
+多 cert-manager webhook 实现， 目前支持：  
+  
 - alidns: 阿里(默认，provider: "")
 - dnspod: 腾讯
 - huawei: 华为(暂未测试)
+
+## 部署
+
+```sh
+curl -sSL https://raw.githubusercontent.com/suisrc/alidns-webhook/refs/heads/main/deploy/bundle.yml | kubectl apply -f -
+
+```
 
 ## alidns
 
