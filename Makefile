@@ -11,7 +11,7 @@ tidy:
 	go mod tidy
 
 build:
-	CGO_ENABLED=0 go build -o .tmp/webhook -ldflags '-w -extldflags "-static"' .
+	CGO_ENABLED=0 go build -o _test/webhook -ldflags '-w -extldflags "-static"' .
 
 # go env -w GOPROXY=https://proxy.golang.com.cn,direct
 proxy:
@@ -24,6 +24,9 @@ helm:
 
 main:
 	GROUP_NAME=suisrc go run main.go
+
+test:
+	GROUP_NAME=suisrc _test/webhook
 
 test-custom2:
 	TEST_ASSET_ETCD=_test/kubebuilder/bin/etcd \
