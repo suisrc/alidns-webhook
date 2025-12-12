@@ -43,13 +43,13 @@ func (aa *MultiSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 		klog.Errorf("New client from challenge error: %v", err)
 		return err
 	}
-	zone, err := client.GetHostedZone(ch.ResolvedZone)
+	zone, err := client.GetHosted(ch.ResolvedZone)
 	if err != nil {
 		klog.Errorf("Get hosted zone %v error: %v", ch.ResolvedZone, err)
 		return err
 	}
-	rr := ExtractRR(ch.ResolvedFQDN, ch.ResolvedZone)
-	if err := client.AddTxtRecord(zone, rr, ch.Key, "TXT"); err != nil {
+	rr := ExtractRR(ch.ResolvedFQDN, zone)
+	if err := client.AddRecord(zone, rr, ch.Key, "TXT"); err != nil {
 		klog.Errorf("Add txt record %q error: %v", ch.ResolvedFQDN, err)
 		return err
 	}
@@ -68,13 +68,13 @@ func (aa *MultiSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 		klog.Errorf("New client from challenge error: %v", err)
 		return err
 	}
-	zone, err := client.GetHostedZone(ch.ResolvedZone)
+	zone, err := client.GetHosted(ch.ResolvedZone)
 	if err != nil {
 		klog.Errorf("Get hosted zone %v error: %v", ch.ResolvedZone, err)
 		return err
 	}
 	rr := ExtractRR(ch.ResolvedFQDN, ch.ResolvedZone)
-	id, val, err := client.GetTxtRecord(zone, rr, "TXT")
+	id, val, err := client.GetRecord(zone, rr, "TXT")
 	if err != nil {
 		klog.Errorf("Get txt record %v.%v error: %v", rr, zone, err)
 		return err
@@ -83,7 +83,7 @@ func (aa *MultiSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 		klog.Errorf("Records value does not match: %v", ch.ResolvedFQDN)
 		return errors.New("record value does not match")
 	}
-	if err := client.DelTxtRecord(zone, id); err != nil {
+	if err := client.DelRecord(zone, id); err != nil {
 		klog.Errorf("Delete txt record %v error: %v", ch.ResolvedFQDN, err)
 		return err
 	}

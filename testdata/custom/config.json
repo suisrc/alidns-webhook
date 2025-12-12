@@ -1,0 +1,12 @@
+{
+  "provider": "custom",
+  "region": "",
+  "accessRef": {
+    "name": "custom-secret",
+    "key": "access"
+  },
+  "secretRef": {
+    "name": "custom-secret",
+    "key": "secret"
+  }
+}

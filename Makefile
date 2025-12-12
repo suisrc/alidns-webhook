@@ -22,6 +22,16 @@ proxy:
 helm:
 	helm -n cert-manager template deploy/webhook > deploy/bundle.yml
 
-test:
+main:
 	GROUP_NAME=suisrc go run main.go
+
+# make test 
+test-custom:
+	TEST_ASSET_ETCD=_test/kubebuilder/bin/etcd \
+	TEST_ASSET_KUBE_APISERVER=_test/kubebuilder/bin/kube-apiserver \
+	TEST_ASSET_KUBECTL=_test/kubebuilder/bin/kubectl \
+	go test -v -run TestCustom testdata/custom_test.go
+
+test:
+	go test -v -run TestCustom testdata/custom_test.go
 
