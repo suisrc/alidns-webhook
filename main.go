@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	"github.com/suisrc/webhook-dns/multi"
 
@@ -10,10 +8,8 @@ import (
 	_ "github.com/suisrc/webhook-dns/provider"
 )
 
-var GroupName = os.Getenv("GROUP_NAME")
-
 func main() {
-	if GroupName == "" {
+	if multi.GroupName == "" {
 		panic("GROUP_NAME must be specified")
 	}
 
@@ -22,5 +18,5 @@ func main() {
 	// You can register multiple DNS provider implementations with a single
 	// webhook, where the Name() method will be used to disambiguate between
 	// the different implementations.
-	cmd.RunWebhookServer(GroupName, multi.NewSolver())
+	cmd.RunWebhookServer(multi.GroupName, multi.NewSolver())
 }

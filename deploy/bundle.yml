@@ -144,7 +144,7 @@ spec:
       serviceAccountName: webhook-suisrc
       containers:
         - name: webhook-suisrc
-          image: "suisrc/alidns-webhook:latest"
+          image: "suisrc/alidns-webhook:1.0.0"
           imagePullPolicy: IfNotPresent
           args:
             - --tls-cert-file=/tls/tls.crt

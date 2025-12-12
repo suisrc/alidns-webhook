@@ -168,25 +168,18 @@ type AlidnsClient struct {
 }
 
 type AlidnsConfig struct {
-	Region    string                   `json:"region,omitempty"`
-	AccessRef cmmeta.SecretKeySelector `json:"accessRef"`
-	SecretRef cmmeta.SecretKeySelector `json:"secretRef"`
+	multi.Config
+	Region string `json:"region,omitempty"`
+}
+
+func (cc *AlidnsConfig) GetConfig() *multi.Config {
+	return &cc.Config
 }
 
 func NewAlidns(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.DnsClient, error) {
 	cfg := AlidnsConfig{}
-	if err := json.Unmarshal(ch.Config.Raw, &cfg); err != nil {
-		return nil, fmt.Errorf("error decoding solver config: %v", err)
-	}
-	klog.Infof("Decoded config: %v", cfg)
-	access, err := multi.GetSecretData(cl, cfg.AccessRef, ch.ResourceNamespace)
+	access, secret, err := multi.LoadConfig(cl, ch, &cfg)
 	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.AccessRef.Name, err)
-		return nil, err
-	}
-	secret, err := multi.GetSecretData(cl, cfg.SecretRef, ch.ResourceNamespace)
-	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.SecretRef.Name, err)
 		return nil, err
 	}
 

@@ -1,6 +1,7 @@
 package multi
 
 import (
+	"os"
 	"strings"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook"
@@ -9,6 +10,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+)
+
+var (
+	GroupName  = os.Getenv("GROUP_NAME")
+	SolverName = os.Getenv("SOLVER_NAME")
 )
 
 var _ webhook.Solver = (*MultiSolver)(nil)
@@ -22,6 +28,9 @@ type MultiSolver struct {
 }
 
 func (aa *MultiSolver) Name() string {
+	if SolverName != "" {
+		return SolverName
+	}
 	return "suisrc"
 }
 
