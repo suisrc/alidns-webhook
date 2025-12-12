@@ -12,10 +12,10 @@ var (
 )
 
 func init() {
-	multi.ClientBuilders["custom"] = NewCustom
-	multi.ClientBuilders["alidns"] = NewAlidns
-	multi.ClientBuilders["dnspod"] = NewDnspod
-	// multi.ClientBuilders["huawei"] = NewHuawei 没有令牌，暂时没有测试
+	multi.DnsBuilders["custom"] = NewCustom
+	multi.DnsBuilders["alidns"] = NewAlidns
+	multi.DnsBuilders["dnspod"] = NewDnspod
+	// multi.DnsBuilders["huawei"] = NewHuawei 没有账号，暂时没有测试
 
 	klog.Info("Registered providers: custom, alidns, dnspod")
 }

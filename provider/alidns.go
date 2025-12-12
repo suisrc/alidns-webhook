@@ -1,46 +1,37 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/alidns"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cert-manager/cert-manager/pkg/issuer/acme/dns/util"
 	"github.com/suisrc/webhook-dns/multi"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )
 
-var _ multi.Client = (*AlidnsClient)(nil)
+var _ multi.DnsClient = (*AlidnsClient)(nil)
 
 type AlidnsClient struct {
 	dnsc *alidns.Client
 }
 
 type AlidnsConfig struct {
-	Region    string                   `json:"region,omitempty"`
-	AccessRef cmmeta.SecretKeySelector `json:"accessRef"`
-	SecretRef cmmeta.SecretKeySelector `json:"secretRef"`
+	multi.Config
+	Region string `json:"region,omitempty"`
 }
 
-func NewAlidns(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.Client, error) {
+func (cc *AlidnsConfig) GetConfig() *multi.Config {
+	return &cc.Config
+}
+
+func NewAlidns(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.DnsClient, error) {
 	cfg := AlidnsConfig{}
-	if err := json.Unmarshal(ch.Config.Raw, &cfg); err != nil {
-		return nil, fmt.Errorf("error decoding solver config: %v", err)
-	}
-	klog.Infof("Decoded config: %v", cfg)
-	access, err := multi.GetSecretData(cl, cfg.AccessRef, ch.ResourceNamespace)
+	access, secret, err := multi.LoadConfig(cl, ch, &cfg)
 	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.AccessRef.Name, err)
-		return nil, err
-	}
-	secret, err := multi.GetSecretData(cl, cfg.SecretRef, ch.ResourceNamespace)
-	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.SecretRef.Name, err)
 		return nil, err
 	}
 

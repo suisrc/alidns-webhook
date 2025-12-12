@@ -1,53 +1,44 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cert-manager/cert-manager/pkg/issuer/acme/dns/util"
 	"github.com/suisrc/webhook-dns/multi"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )
 
-var _ multi.Client = (*CustomClient)(nil)
+var _ multi.DnsClient = (*CustomClient)(nil)
 
 type CustomClient struct {
 	conf CustomConfig
 }
 
 type CustomConfig struct {
-	Region    string                   `json:"region,omitempty"`
-	AccessRef cmmeta.SecretKeySelector `json:"accessRef"`
-	SecretRef cmmeta.SecretKeySelector `json:"secretRef"`
+	multi.Config
+	Region string `json:"region,omitempty"`
 
 	access string `json:"-"`
 	secret string `json:"-"`
+}
+
+func (cc *CustomConfig) GetConfig() *multi.Config {
+	return &cc.Config
 }
 
 var (
 	_custom_records map[string]string = nil
 )
 
-func NewCustom(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.Client, error) {
+func NewCustom(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.DnsClient, error) {
 	if _custom_records == nil {
 		_custom_records = make(map[string]string)
 	}
 	cfg := CustomConfig{}
-	if err := json.Unmarshal(ch.Config.Raw, &cfg); err != nil {
-		return nil, fmt.Errorf("error decoding solver config: %v", err)
-	}
-	klog.Infof("Decoded config: %v", cfg)
-	access, err := multi.GetSecretData(cl, cfg.AccessRef, ch.ResourceNamespace)
+	access, secret, err := multi.LoadConfig(cl, ch, &cfg)
 	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.AccessRef.Name, err)
-		return nil, err
-	}
-	secret, err := multi.GetSecretData(cl, cfg.SecretRef, ch.ResourceNamespace)
-	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.SecretRef.Name, err)
 		return nil, err
 	}
 	cfg.access = string(access)

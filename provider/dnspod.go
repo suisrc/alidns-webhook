@@ -1,12 +1,9 @@
 package provider
 
 import (
-	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cert-manager/cert-manager/pkg/issuer/acme/dns/util"
 	"github.com/suisrc/webhook-dns/multi"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -16,7 +13,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var _ multi.Client = (*DnspodClient)(nil)
+var _ multi.DnsClient = (*DnspodClient)(nil)
 
 type DnspodClient struct {
 	dnsc *dnspod.Client
@@ -24,33 +21,26 @@ type DnspodClient struct {
 }
 
 type DnspodConfig struct {
-	TTL        *uint64                  `json:"ttl,omitempty"`
-	RecordLine string                   `json:"recordLine,omitempty"`
-	AccessRef  cmmeta.SecretKeySelector `json:"accessRef"`
-	SecretRef  cmmeta.SecretKeySelector `json:"secretRef"`
+	multi.Config
+	TTL        *uint64 `json:"ttl,omitempty"`
+	RecordLine string  `json:"recordLine,omitempty"`
 }
 
-func NewDnspod(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.Client, error) {
+func (cc *DnspodConfig) GetConfig() *multi.Config {
+	return &cc.Config
+}
+
+func NewDnspod(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.DnsClient, error) {
 	cfg := DnspodConfig{}
-	if err := json.Unmarshal(ch.Config.Raw, &cfg); err != nil {
-		return nil, fmt.Errorf("error decoding solver config: %v", err)
+	access, secret, err := multi.LoadConfig(cl, ch, &cfg)
+	if err != nil {
+		return nil, err
 	}
 	if cfg.RecordLine == "" {
 		cfg.RecordLine = "默认"
 	}
 	if cfg.TTL == nil {
 		cfg.TTL = common.Uint64Ptr(600)
-	}
-	klog.Infof("Decoded config: %v", cfg)
-	access, err := multi.GetSecretData(cl, cfg.AccessRef, ch.ResourceNamespace)
-	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.AccessRef.Name, err)
-		return nil, err
-	}
-	secret, err := multi.GetSecretData(cl, cfg.SecretRef, ch.ResourceNamespace)
-	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.SecretRef.Name, err)
-		return nil, err
 	}
 
 	cred := common.NewCredential(string(access), string(secret))

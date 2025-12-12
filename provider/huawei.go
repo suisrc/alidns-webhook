@@ -1,11 +1,9 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
 	huawei "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dns/v2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dns/v2/model"
@@ -15,34 +13,28 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var _ multi.Client = (*HuaweiClient)(nil)
+var _ multi.DnsClient = (*HuaweiClient)(nil)
 
 type HuaweiClient struct {
 	dnsc *huawei.DnsClient
 }
 
 type HuaweiConfig struct {
-	Region    string                   `json:"region,omitempty"`
-	AccessRef cmmeta.SecretKeySelector `json:"accessRef"`
-	SecretRef cmmeta.SecretKeySelector `json:"secretRef"`
+	multi.Config
+	Region string `json:"region,omitempty"`
 }
 
-func NewHuawei(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.Client, error) {
+func (cc *HuaweiConfig) GetConfig() *multi.Config {
+	return &cc.Config
+}
+
+func NewHuawei(cl *kubernetes.Clientset, ch *v1alpha1.ChallengeRequest) (multi.DnsClient, error) {
 	cfg := HuaweiConfig{}
-	if err := json.Unmarshal(ch.Config.Raw, &cfg); err != nil {
-		return nil, fmt.Errorf("error decoding solver config: %v", err)
-	}
-	klog.Infof("Decoded config: %v", cfg)
-	access, err := multi.GetSecretData(cl, cfg.AccessRef, ch.ResourceNamespace)
+	access, secret, err := multi.LoadConfig(cl, ch, &cfg)
 	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.AccessRef.Name, err)
 		return nil, err
 	}
-	secret, err := multi.GetSecretData(cl, cfg.SecretRef, ch.ResourceNamespace)
-	if err != nil {
-		klog.Errorf("error getting secret %s/%s: %v", ch.ResourceNamespace, cfg.SecretRef.Name, err)
-		return nil, err
-	}
+
 	auth, err := basic.NewCredentialsBuilder().WithAk(string(access)).WithSk(string(secret)).SafeBuild()
 	if err != nil {
 		klog.Errorf("error creating huawei auth: %v", err)
