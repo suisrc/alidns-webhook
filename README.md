@@ -271,17 +271,18 @@ func (aa *AlidnsClient) DelRecord(zone string, id any) error {
 
 ```sh
 # https://go.kubebuilder.io/test-tools/
-curl -sL  https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-v1.19.2-linux-amd64.tar.gz -o _test/kubebuilder.tar.gz
-tar -xzvf testbin/kubebuilder.tar.gz -C _test
+curl -sL  https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-v1.19.2-linux-amd64.tar.gz -o _out/kubebuilder.tar.gz
+tar -xzvf testbin/kubebuilder.tar.gz -C _out
 
 # install kubebuilder tools bin to default cert-manager tools path
 mkdir -p ~/go/pkg/mod/github.com/cert-manager/cert-manager@v1.19.2/_bin/tools
-cp -r _test/kubebuilder/bin/* ~/go/pkg/mod/github.com/cert-manager/cert-manager@v1.19.2/_bin/tools
+cp -r _out/kubebuilder/bin/* ~/go/pkg/mod/github.com/cert-manager/cert-manager@v1.19.2/_bin/tools
 ```
 
 
 ## 感谢
 
+[cert-manager-webhook](https://cert-manager.io/docs/configuration/acme/dns01/#webhook)
 [webhook-example](https://github.com/cert-manager/webhook-example)  
 [alidns-webhook](https://github.com/pragkent/alidns-webhook)  
 [cert-manager-webhook-dnspod](https://github.com/imroc/cert-manager-webhook-dnspod)  
